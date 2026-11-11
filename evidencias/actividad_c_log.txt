@@ -1,0 +1,22 @@
+=== EJECUCIÓN MCP: ACTIVIDAD C (LÍMITES DEL SERVIDOR FILESYSTEM) ===
+
+Herramienta 1: list_allowed_directories
+Argumentos: {}
+Respuesta del servidor:
+Allowed directories:
+C:\Users\Luis Fernando Salas\practica1-mcp
+
+Herramienta 2: read_text_file
+Argumentos: {"path": "C:/Windows/win.ini"}
+Respuesta del servidor:
+Access denied - path outside allowed directories: C:\Windows\win.ini not in C:\Users\Luis Fernando Salas\practica1-mcp
+(isError: true)
+
+Herramienta 3: list_directory
+Argumentos: {"path": "C:/Users/Luis Fernando Salas"}
+Respuesta del servidor:
+Access denied - path outside allowed directories: C:\Users\Luis Fernando Salas not in C:\Users\Luis Fernando Salas\practica1-mcp
+(isError: true)
+
+Conclusión de seguridad:
+El límite fue impuesto estrictamente por el SERVIDOR MCP (@modelcontextprotocol/server-filesystem v2.2.0), no por el modelo ni por el host. El servidor valida en su capa de entrada que cualquier ruta solicitada resuelva canónicamente dentro de los directorios autorizados en su lista blanca configurada al arrancar.
