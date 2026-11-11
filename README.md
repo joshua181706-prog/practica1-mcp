@@ -32,7 +32,7 @@ Para reproducir esta práctica desde cero, asegúrese de contar con:
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/TU_USUARIO/practica1-mcp.git
+   git clone https://github.com/joshua181706-prog/practica1-mcp.git
    cd practica1-mcp
    ```
 
