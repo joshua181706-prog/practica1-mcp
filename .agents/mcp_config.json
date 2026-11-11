@@ -7,7 +7,7 @@
         "npx",
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:\\Users\\Luis Fernando Salas\\practica1-mcp"
+        "C:\\Users\\Luis Fernando Salas\\Desktop\\Topicos\\practica1-mcp"
       ]
     },
     "playwright": {

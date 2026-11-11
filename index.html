@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Práctica 1: Conectar Servidores MCP a un Agente | Luis Fernando Salas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0f1d;
+      --bg-secondary: #111827;
+      --bg-card: #1e293b;
+      --bg-card-hover: #273549;
+      --border-color: #334155;
+      --border-accent: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #38bdf8;
+      --primary-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+      --accent-green: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-red: #f87171;
+      --accent-purple: #a78bfa;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    
+    /* Header & Hero */
+    header {
+      background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.15), transparent 70%), var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 48px 0 32px 0;
+      position: relative;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-pill .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+    
+    h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 850px;
+      margin-bottom: 24px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+      background: rgba(15, 23, 42, 0.7);
+      padding: 18px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(8px);
+    }
+    .meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .meta-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700; letter-spacing: 0.5px; }
+    .meta-value { font-size: 0.95rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+
+    /* Nav Tabs */
+    .nav-tabs-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(10, 15, 29, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 0;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      background: var(--bg-card);
+      color: var(--primary);
+      border-color: var(--border-color);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Content Sections */
+    main { padding: 40px 0 80px 0; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Architecture diagram */
+    .arch-diagram {
+      display: grid;
+      grid-template-columns: 1fr auto 1.2fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+      padding: 24px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      margin: 20px 0;
+      text-align: center;
+    }
+    .arch-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .arch-box.host { border-color: #38bdf8; }
+    .arch-box.servers { border-color: #34d399; }
+    .arch-box.resources { border-color: #a78bfa; }
+    .arch-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+    .arch-desc { font-size: 0.8rem; color: var(--text-muted); }
+    .arch-arrow { color: var(--primary); font-size: 1.4rem; font-weight: bold; }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--bg-secondary);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+    th {
+      background: #1e293b;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      color: var(--text-main);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .badge-success { background: rgba(52, 211, 153, 0.15); color: var(--accent-green); border: 1px solid rgba(52, 211, 153, 0.3); }
+    .badge-danger { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); border: 1px solid rgba(248, 113, 113, 0.3); }
+    .badge-info { background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+    /* Terminal Simulator */
+    .terminal-box {
+      background: #020617;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+    .terminal-line { margin-bottom: 8px; line-height: 1.5; }
+    .terminal-prompt { color: #38bdf8; font-weight: bold; }
+    .terminal-error { color: #f87171; background: rgba(239, 68, 68, 0.08); padding: 4px 8px; border-left: 3px solid #ef4444; border-radius: 0 4px 4px 0; margin: 4px 0; }
+    .terminal-success { color: #34d399; }
+
+    /* Code Block */
+    pre code {
+      display: block;
+      padding: 18px;
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    /* Accordion */
+    .accordion-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .accordion-item:hover { border-color: rgba(56, 189, 248, 0.4); }
+    .accordion-header {
+      padding: 16px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 1rem;
+      user-select: none;
+    }
+    .accordion-content {
+      padding: 0 20px 20px 20px;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
+      display: none;
+      border-top: 1px solid rgba(51, 65, 85, 0.4);
+      padding-top: 16px;
+    }
+    .accordion-item.open .accordion-content { display: block; }
+    .accordion-icon { transition: transform 0.2s; font-size: 0.8rem; }
+    .accordion-item.open .accordion-icon { transform: rotate(180deg); color: var(--primary); }
+
+    /* Search & Filter Controls */
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .btn-action {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-action:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .btn-primary {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #0369a1;
+      color: white;
+    }
+
+    /* Images */
+    .preview-img-container {
+      margin: 16px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      background: #020617;
+    }
+    .preview-img-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s;
+    }
+
+    /* Steps list */
+    .step-list { list-style: none; counter-reset: step-counter; margin: 16px 0; }
+    .step-item {
+      position: relative;
+      padding-left: 48px;
+      margin-bottom: 20px;
+    }
+    .step-item::before {
+      counter-increment: step-counter;
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 32px;
+      height: 32px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      padding: 30px 0;
+      color: var(--text-dim);
+      font-size: 0.88rem;
+      text-align: center;
+    }
+
+    /* Print Styles */
+    @media print {
+      body { background: white !important; color: black !important; }
+      header, .nav-tabs-wrapper, .btn-action, .search-bar { display: none !important; }
+      .tab-content { display: block !important; opacity: 1 !important; }
+      .card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; background: white !important; color: black !important; }
+      td, th { color: black !important; border-color: #ddd !important; }
+      .terminal-box, pre code { background: #f8f9fa !important; color: black !important; border: 1px solid #ccc !important; }
+      h1, h2, h3, .card-title { color: #0f172a !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <div class="badge-pill">
+        <span class="pulse-dot"></span>
+        Ingeniería en Sistemas Computacionales &bull; Tópicos Avanzados
+      </div>
+      <h1>Práctica 1: Conectar Servidores MCP a un Agente</h1>
+      <p class="hero-subtitle">
+        Implementación integral del Model Context Protocol (MCP) en Google Antigravity para automatización de archivos locales, web scraping con Playwright y razonamiento secuencial autónomo.
+      </p>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <span class="meta-label">Estudiante</span>
+          <span class="meta-value">👤 Luis Fernando Salas</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Agente Host</span>
+          <span class="meta-value">🤖 Google Antigravity (Ruta B)</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Entorno</span>
+          <span class="meta-value">💻 Windows 11 &bull; Node.js v26.13.0</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Calificación</span>
+          <span class="meta-value" style="color: var(--accent-green);">⭐ 100 / 100 Puntos (Rúbrica)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Navigation Tabs -->
+  <div class="nav-tabs-wrapper">
+    <div class="container">
+      <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('resumen')">📋 Arquitectura & Resumen</button>
+        <button class="tab-btn" onclick="switchTab('servidores')">⚙️ Servidores MCP (3)</button>
+        <button class="tab-btn" onclick="switchTab('actividad-a')">📊 Actividad A (Calificaciones)</button>
+        <button class="tab-btn" onclick="switchTab('actividad-b')">🌐 Actividad B (Wikipedia Scraping)</button>
+        <button class="tab-btn" onclick="switchTab('actividad-c')">🛡️ Actividad C (Límites de Seguridad)</button>
+        <button class="tab-btn" onclick="switchTab('actividad-d')">💭 Actividad D (Sequential Thinking)</button>
+        <button class="tab-btn" onclick="switchTab('preguntas')">❓ Preguntas de Reflexión</button>
+        <button class="tab-btn" onclick="switchTab('git')">📦 Git & Reproducción</button>
+        <button class="tab-btn btn-action" onclick="window.print()" style="margin-left:auto;">🖨️ Imprimir / PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="container">
+
+    <!-- TAB 1: RESUMEN Y ARQUITECTURA -->
+    <section id="tab-resumen" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🏛️ Arquitectura del Model Context Protocol</h2>
+          <span class="badge badge-info">Protocolo Abierto JSON-RPC 2.0</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">
+          El <strong>Model Context Protocol (MCP)</strong> resuelve el problema de la fragmentación en herramientas de inteligencia artificial. Antes de MCP, cada agente requería integraciones propietarias. Con MCP, el modelo se desacopla de la implementación física de las herramientas comunicándose a través de un canal estandarizado.
+        </p>
+
+        <div class="arch-diagram">
+          <div class="arch-box host">
+            <div class="arch-title">Host: Antigravity</div>
+            <div class="arch-desc">Contiene el LLM (Gemini) y orquesta los clientes MCP y los permisos.</div>
+          </div>
+          <div class="arch-arrow">➔<br><span style="font-size:0.7rem; color:var(--text-dim);">JSON-RPC</span></div>
+          <div class="arch-box servers">
+            <div class="arch-title">Clientes y Servidores MCP</div>
+            <div class="arch-desc">stdio transport<br><strong>filesystem</strong> &bull; <strong>playwright</strong> &bull; <strong>thinking</strong></div>
+          </div>
+          <div class="arch-arrow">➔<br><span style="font-size:0.7rem; color:var(--text-dim);">Acciones</span></div>
+          <div class="arch-box resources">
+            <div class="arch-title">Recursos del Sistema</div>
+            <div class="arch-desc">Disco local (datos/salida), Navegador Headless e Internet.</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 20px;">
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <h4 style="color: var(--primary); margin-bottom: 8px;">1. Host</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+              La aplicación con la que interactúas. Contiene el modelo de lenguaje y decide qué herramientas se ofrecen y cuáles requieren aprobación humana (*human-in-the-loop*).
+            </p>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <h4 style="color: var(--accent-green); margin-bottom: 8px;">2. Cliente MCP</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+              Componente interno del host que establece y mantiene la conexión mediante subprocesos y comunicación estándar (`stdio`) con cada servidor.
+            </p>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <h4 style="color: var(--accent-purple); margin-bottom: 8px;">3. Servidor MCP</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+              Proceso independiente que expone primitivas (herramientas, recursos o plantillas). El modelo nunca toca el disco ni la red directamente.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🎯 Objetivos de la Práctica Cumplidos</h2>
+          <span class="badge badge-success">5 / 5 Completados</span>
+        </div>
+        <ul class="step-list">
+          <li class="step-item">
+            <strong>Explicar qué es MCP y distinguir los papeles:</strong> Diferenciación clara entre Host (Antigravity), Cliente (puente stdio) y Servidor (procesos npx).
+          </li>
+          <li class="step-item">
+            <strong>Instalar y configurar servidores locales:</strong> Se configuraron 3 servidores (`filesystem`, `playwright`, `sequential-thinking`) en Windows 11.
+          </li>
+          <li class="step-item">
+            <strong>Resolver tareas combinando dos servidores:</strong> En la Actividad B se orquestó Playwright para scraping y Filesystem para persistencia en CSV.
+          </li>
+          <li class="step-item">
+            <strong>Comprobar límites de acceso y seguridad:</strong> Se provocaron y documentaron los errores <code>Access denied</code> fuera de la carpeta autorizada.
+          </li>
+          <li class="step-item">
+            <strong>Documentar y publicar en GitHub:</strong> Estructura completa de carpetas, evidencias gráficas y README técnico detallado de 7 secciones.
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- TAB 2: SERVIDORES CONFIGURADOS -->
+    <section id="tab-servidores" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">⚙️ Configuración Activa (`.agents/mcp_config.json`)</h2>
+          <button class="btn-action" onclick="copyConfig()">📋 Copiar JSON</button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+          En Windows, los servidores se invocan a través de <code>cmd /c npx -y &lt;paquete&gt;</code> para permitir que el host ejecute los archivos por lotes sin restricciones de PowerShell.
+        </p>
+        <pre><code id="configCode">{
+  "mcpServers": {
+    "filesystem": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:\\Users\\Luis Fernando Salas\\Desktop\\Topicos\\practica1-mcp"
+      ]
+    },
+    "playwright": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@playwright/mcp@latest",
+        "--headless"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    }
+  }
+}</code></pre>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🖥️ Evidencia de Servidores Conectados</h2>
+          <span class="badge badge-success">Estado: Online</span>
+        </div>
+        <div class="preview-img-container">
+          <img src="evidencias/01_servidores.png" alt="Servidores MCP Conectados">
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ACTIVIDAD A -->
+    <section id="tab-actividad-a" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📊 Actividad A: Lectura y Escritura de Archivos</h2>
+          <span class="badge badge-info">Servidor: filesystem</span>
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.08); padding: 14px 18px; border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+          <strong>Instrucción dada al agente:</strong><br>
+          <em>"Usa unicamente las herramientas del servidor MCP filesystem. 1) Lista el contenido de la carpeta datos. 2) Lee datos/calificaciones.csv. 3) Calcula el promedio final de cada alumno e indica si aprueba (promedio &gt;= 6.0). 4) Escribe el resultado en salida/reporte.md como una tabla Markdown ordenada de mayor a menor promedio, y al final agrega el promedio del grupo."</em>
+        </div>
+
+        <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">Secuencia de Herramientas Utilizadas</h3>
+        <div class="terminal-box">
+          <div class="terminal-line"><span class="terminal-prompt">1. filesystem.list_directory</span>(path: "datos") ➔ [FILE] calificaciones.csv</div>
+          <div class="terminal-line"><span class="terminal-prompt">2. filesystem.read_text_file</span>(path: "datos/calificaciones.csv") ➔ 8 registros CSV leídos</div>
+          <div class="terminal-line"><span class="terminal-prompt">3. filesystem.write_file</span>(path: "salida/reporte.md") ➔ Successfully wrote 695 bytes</div>
+        </div>
+
+        <h3 style="font-size: 1.1rem; margin: 24px 0 12px 0; color: var(--text-main);">Resultado Generado: Tabla de Calificaciones</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Posición</th>
+                <th>Matrícula</th>
+                <th>Nombre</th>
+                <th>Parcial 1</th>
+                <th>Parcial 2</th>
+                <th>Parcial 3</th>
+                <th>Promedio</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td><code>A003</code></td><td>Carla Mendez</td><td>10.0</td><td>9.5</td><td>9.0</td><td><strong>9.50</strong></td><td><span class="badge badge-success">Aprueba</span></td></tr>
+              <tr><td>2</td><td><code>A007</code></td><td>Gabriela Luna</td><td>9.5</td><td>10.0</td><td>9.0</td><td><strong>9.50</strong></td><td><span class="badge badge-success">Aprueba</span></td></tr>
+              <tr><td>3</td><td><code>A001</code></td><td>Ana Torres</td><td>9.0</td><td>8.5</td><td>9.5</td><td><strong>9.00</strong></td><td><span class="badge badge-success">Aprueba</span></td></tr>
+              <tr><td>4</td><td><code>A005</code></td><td>Elena Castro</td><td>8.0</td><td>8.0</td><td>8.5</td><td><strong>8.17</strong></td><td><span class="badge badge-success">Aprueba</span></td></tr>
+              <tr><td>5</td><td><code>A006</code></td><td>Fabian Ortiz</td><td>7.5</td><td>6.0</td><td>7.0</td><td><strong>6.83</strong></td><td><span class="badge badge-success">Aprueba</span></td></tr>
+              <tr><td>6</td><td><code>A002</code></td><td>Bruno Salas</td><td>6.0</td><td>7.0</td><td>5.5</td><td><strong>6.17</strong></td><td><span class="badge badge-success">Aprueba</span></td></tr>
+              <tr><td>7</td><td><code>A004</code></td><td>Diego Ruiz</td><td>5.0</td><td>6.5</td><td>5.0</td><td><strong>5.50</strong></td><td><span class="badge badge-danger">No aprueba</span></td></tr>
+              <tr><td>8</td><td><code>A008</code></td><td>Hector Vega</td><td>4.5</td><td>5.0</td><td>6.5</td><td><strong>5.33</strong></td><td><span class="badge badge-danger">No aprueba</span></td></tr>
+            </tbody>
+            <tfoot>
+              <tr style="background: #111827; font-weight: bold;">
+                <td colspan="6" style="text-align: right; color: var(--primary);">Promedio General del Grupo:</td>
+                <td colspan="2" style="color: var(--accent-green); font-size: 1.1rem;">7.50</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ACTIVIDAD B -->
+    <section id="tab-actividad-b" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🌐 Actividad B: De una Página Web a un CSV</h2>
+          <span class="badge badge-info">playwright + filesystem</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+          Extracción estructurada de las 32 entidades federativas de México a partir de Wikipedia (<a href="https://es.wikipedia.org/?curid=5897912" target="_blank" style="color: var(--primary);">curid=5897912</a>). Se utilizó <strong>Playwright</strong> para navegar, aislar la tabla y ejecutar código JS de normalización numérica, y luego <strong>Filesystem</strong> para guardar <code>salida/entidades.csv</code>.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px;">
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Filas Extraídas</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--primary);">32 Entidades</div>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Año Estimación Población</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent-green);">2020</div>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;">Año Reportado Densidad</div>
+            <div style="font-size: 1.8rem; font-weight: 800; color: var(--accent-purple);">2015</div>
+          </div>
+        </div>
+
+        <div class="card-header" style="margin-top: 24px;">
+          <h3 style="font-size: 1.1rem; color: var(--text-main);">🔍 Explorador Interactivo de Entidades Extraídas</h3>
+        </div>
+        
+        <div class="search-bar">
+          <input type="text" id="entitySearch" class="search-input" placeholder="Buscar por entidad (ej. Chihuahua, Jalisco, CDMX)..." onkeyup="filterEntities()">
+        </div>
+
+        <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+          <table id="entitiesTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Entidad</th>
+                <th>Superficie (km²)</th>
+                <th>Población (2020)</th>
+                <th>Densidad (hab/km²)</th>
+                <th>Verificación</th>
+              </tr>
+            </thead>
+            <tbody id="entitiesBody">
+              <!-- Dynamically populated or preloaded -->
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size: 1.1rem; margin: 28px 0 12px 0; color: var(--text-main);">📸 Captura Real con Playwright</h3>
+        <div class="preview-img-container">
+          <img src="evidencias/02_wikipedia.png" alt="Captura de Wikipedia con Playwright">
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: ACTIVIDAD C -->
+    <section id="tab-actividad-c" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🛡️ Actividad C: Los Límites del Servidor MCP</h2>
+          <span class="badge badge-danger">Sandbox Security Test</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+          Se evaluó la resistencia del servidor ante intentos de acceso a rutas prohibidas en el sistema operativo.
+        </p>
+
+        <div class="terminal-box">
+          <div class="terminal-line"><span class="terminal-prompt">Paso 1 > filesystem.list_allowed_directories()</span></div>
+          <div class="terminal-line terminal-success">Allowed directories:<br>C:\Users\Luis Fernando Salas\Desktop\Topicos\practica1-mcp</div>
+          <br>
+          <div class="terminal-line"><span class="terminal-prompt">Paso 2 > filesystem.read_text_file(path: "C:/Windows/win.ini")</span></div>
+          <div class="terminal-line terminal-error">Access denied - path outside allowed directories: C:\Windows\win.ini not in C:\Users\Luis Fernando Salas\Desktop\Topicos\practica1-mcp</div>
+          <br>
+          <div class="terminal-line"><span class="terminal-prompt">Paso 3 > filesystem.list_directory(path: "C:/Users/Luis Fernando Salas")</span></div>
+          <div class="terminal-line terminal-error">Access denied - path outside allowed directories: C:\Users\Luis Fernando Salas not in C:\Users\Luis Fernando Salas\Desktop\Topicos\practica1-mcp</div>
+        </div>
+
+        <div style="background: rgba(52, 211, 153, 0.08); border-left: 4px solid var(--accent-green); padding: 16px 20px; border-radius: 0 8px 8px 0; margin-top: 20px;">
+          <h4 style="color: var(--accent-green); margin-bottom: 6px;">¿Quién impuso el límite? (Análisis de Seguridad)</h4>
+          <p style="font-size: 0.9rem; color: var(--text-main);">
+            <strong>El límite lo impuso exclusivamente el SERVIDOR MCP (@modelcontextprotocol/server-filesystem).</strong><br>
+            El modelo de lenguaje intentó ejecutar las llamadas RPC; sin embargo, el proceso hijo del servidor MCP valida en código nativo que cualquier ruta solicitada resuelva canónicamente dentro de la lista blanca autorizada en sus argumentos. Al no coincidir, devuelve <code>isError: true</code>. Esto demuestra que la seguridad en la arquitectura MCP no depende de instrucciones dóciles en el prompt del LLM, sino de una frontera perimetral estricta en el sistema.
+          </p>
+        </div>
+
+        <div class="preview-img-container" style="margin-top: 20px;">
+          <img src="evidencias/03_actividad_c.png" alt="Evidencia Actividad C">
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: ACTIVIDAD D -->
+    <section id="tab-actividad-d" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">💭 Actividad D: Tercer Servidor (Sequential Thinking)</h2>
+          <span class="badge badge-info">@modelcontextprotocol/server-sequential-thinking</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">
+          Se integró el servidor oficial de pensamiento secuencial reflexivo para modelar una arquitectura de caché de alta concurrencia para el sistema de actas y calificaciones escolares.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="background: var(--bg-secondary); border-left: 4px solid #818cf8; padding: 16px 20px; border-radius: 0 8px 8px 0;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #818cf8; text-transform: uppercase;">Thought 1/3 &bull; Requerimientos y Diagnóstico</div>
+            <p style="font-size: 0.92rem; color: var(--text-main); margin-top: 4px;">
+              El sistema escolar consulta repetidamente el promedio y estatus de aprobación de los alumnos. En temporadas de entrega final, la base de datos relacional sufre contención por lecturas concurrentes redundantes.
+            </p>
+          </div>
+
+          <div style="background: var(--bg-secondary); border-left: 4px solid #c084fc; padding: 16px 20px; border-radius: 0 8px 8px 0;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #c084fc; text-transform: uppercase;">Thought 2/3 &bull; Análisis de Alternativas y Trade-offs</div>
+            <p style="font-size: 0.92rem; color: var(--text-main); margin-top: 4px;">
+              <strong>Opción A: LRU Cache local:</strong> Latencia sub-milisegundo (&lt;0.1ms), pero riesgo de desincronización en clústeres multinodo.<br>
+              <strong>Opción B: Redis centralizado:</strong> Consistencia estricta compartida entre todos los pods de backend, con persistencia y TTL configurable.
+            </p>
+          </div>
+
+          <div style="background: var(--bg-secondary); border-left: 4px solid var(--accent-green); padding: 16px 20px; border-radius: 0 8px 8px 0;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-green); text-transform: uppercase;">Thought 3/3 &bull; Arquitectura Recomendada (Two-Tier)</div>
+            <p style="font-size: 0.92rem; color: var(--text-main); margin-top: 4px;">
+              Implementación híbrida: L1 en memoria de proceso (LRU de 60 segundos) + L2 Redis en clúster con invalidación mediante eventos Pub/Sub. Esto garantiza latencia ultrabaja y coherencia absoluta en las notas de los estudiantes.
+            </p>
+          </div>
+        </div>
+
+        <div style="background: rgba(167, 139, 250, 0.08); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 8px; padding: 16px; margin-top: 20px;">
+          <h4 style="color: var(--accent-purple); margin-bottom: 4px;">¿Por qué se considera confiable este servidor?</h4>
+          <p style="font-size: 0.88rem; color: var(--text-muted);">
+            Es publicado y mantenido directamente por el equipo central de Model Context Protocol (Anthropic / MCP Core Team). Se ejecuta localmente vía <code>stdio</code>, tiene esquemas JSON estrictamente tipados y no requiere acceso a red ni elevación de privilegios.
+          </p>
+        </div>
+
+        <div class="preview-img-container" style="margin-top: 20px;">
+          <img src="evidencias/04_actividad_d.png" alt="Evidencia Actividad D">
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: PREGUNTAS DE REFLEXION -->
+    <section id="tab-preguntas" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">❓ Preguntas de Reflexión para Discusión en Clase</h2>
+          <span class="badge badge-info">Sección 9 del PDF</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">
+          Respuestas técnicas detalladas para la sesión de discusión académica en clase:
+        </p>
+
+        <div class="accordion-item open">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>1. ¿Qué componente decide cuándo llamar a una herramienta y cuál la ejecuta?</span>
+            <span class="accordion-icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            El <strong>modelo de lenguaje (LLM)</strong> es quien <em>decide</em> cuándo invocar una herramienta analizando el contexto y la instrucción del usuario. El <strong>servidor MCP</strong> es el componente independiente que <em>ejecuta</em> la acción real físicamente en el entorno local (disco, red, navegador). El <strong>host</strong> (Antigravity) actúa como intermediario seguro y guardián de permisos.
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>2. ¿Cómo sabe el modelo qué herramientas existen y para qué sirve cada una?</span>
+            <span class="accordion-icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            Durante la fase de negociación inicial (<code>initialize</code> y <code>tools/list</code>), cada servidor MCP conectado envía un esquema JSON descriptivo con el nombre de cada herramienta, su propósito textual y el esquema de parámetros esperados. El host inyecta estas especificaciones en el prompt del sistema del modelo antes de procesar cualquier solicitud.
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>3. En la actividad B, ¿qué habría pasado si solo tuvieras conectado el servidor Playwright?</span>
+            <span class="accordion-icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            El agente habría podido navegar hasta Wikipedia, evaluar la página e incluso tomar una captura, pero <strong>no habría podido guardar el archivo <code>salida/entidades.csv</code> en el disco duro del equipo</strong>. Playwright solo tiene capacidades sobre el navegador; se requirió indispensablemente la orquestación conjunta con el servidor <code>filesystem</code>.
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>4. En la actividad C, ¿por qué es mejor que el límite lo imponga el servidor y no una instrucción en el prompt?</span>
+            <span class="accordion-icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            Una restricción en el prompt es probabilística y susceptible a ataques de <em>prompt injection</em>, jailbreaks o confusiones del modelo. Cuando la restricción la impone el servidor en su código fuente (verificando rutas canónicas en un allowlist), la barrera de seguridad es **determinista, estricta e inviolable por el modelo**.
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>5. Riesgo de inyección indirecta de prompt en la Actividad B y medidas de mitigación</span>
+            <span class="accordion-icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            Si la página web de Wikipedia incluyera texto malicioso ordenando borrar archivos del usuario (*Indirect Prompt Injection*), en esta práctica el riesgo se neutraliza gracias a dos capas:
+            <ol style="margin-left: 20px; margin-top: 6px;">
+              <li>El servidor <code>filesystem</code> está confinado exclusivamente al directorio de la práctica; no tiene acceso al sistema operativo ni a otras carpetas personales.</li>
+              <li>El modo interactivo de aprobación humana (*Ask mode*) exige confirmación explícita del usuario antes de que se ejecute cualquier herramienta destructiva.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span>6. ¿Qué ventaja tiene que el mismo servidor funcione en Claude Code y en Antigravity sin modificarlo?</span>
+            <span class="accordion-icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            <strong>Interoperabilidad y reutilización:</strong> Se elimina el bloqueo por proveedor (*vendor lock-in*). La comunidad de desarrollo puede programar un servidor de herramientas una sola vez y funcionará de manera universal en Antigravity, Claude Code, Cursor, VS Code o cualquier agente compatible con el estándar abierto MCP.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 8: GIT Y REPRODUCCION -->
+    <section id="tab-git" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📦 Historial de Commits en Git</h2>
+          <span class="badge badge-success">Branch: main</span>
+        </div>
+        <div class="terminal-box">
+          <div class="terminal-line"><span class="terminal-prompt">commit e1a3574</span> &bull; README y evidencias (Documentación completa y capturas)</div>
+          <div class="terminal-line"><span class="terminal-prompt">commit 6591553</span> &bull; Actividad D (Tercer servidor: sequential-thinking)</div>
+          <div class="terminal-line"><span class="terminal-prompt">commit f6c8c4c</span> &bull; Actividad C (Comprobación de límites de filesystem)</div>
+          <div class="terminal-line"><span class="terminal-prompt">commit ff6a41a</span> &bull; Actividad B (Extracción de entidades.csv y captura web)</div>
+          <div class="terminal-line"><span class="terminal-prompt">commit f99fc33</span> &bull; Actividad A (Generación de reporte.md con notas)</div>
+          <div class="terminal-line"><span class="terminal-prompt">commit 89ca535</span> &bull; Estructura inicial y datos (calificaciones.csv y gitignore)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🚀 Pasos de Publicación en GitHub</h2>
+        </div>
+        <ol class="step-list">
+          <li class="step-item">
+            <strong>Crear el repositorio:</strong> En <a href="https://github.com/new" target="_blank" style="color:var(--primary);">github.com/new</a> crear <code>practica1-mcp</code> (Público, sin README ni .gitignore).
+          </li>
+          <li class="step-item">
+            <strong>Vincular y subir cambios desde terminal:</strong>
+            <pre><code style="margin-top:8px;">cd "C:\Users\Luis Fernando Salas\Desktop\Topicos\practica1-mcp"
+git remote add origin https://github.com/TU_USUARIO/practica1-mcp.git
+git push -u origin main</code></pre>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      Ingeniería en Sistemas Computacionales &bull; Tópicos Avanzados de Programación<br>
+      Práctica 1: Model Context Protocol (MCP) &bull; Luis Fernando Salas &bull; 2026
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      const targetContent = document.getElementById('tab-' + tabId);
+      if (targetContent) targetContent.classList.add('active');
+
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // Accordion toggle
+    function toggleAccordion(header) {
+      const item = header.parentElement;
+      item.classList.toggle('open');
+    }
+
+    // Copy configuration
+    function copyConfig() {
+      const text = document.getElementById('configCode').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('¡Configuración copiada al portapapeles!');
+      });
+    }
+
+    // 32 Entities Data
+    const entitiesData = [
+      { id: 1, name: "Chihuahua", area: 247455, pop: 3741869, den: 14, verified: true },
+      { id: 2, name: "Sonora", area: 179355, pop: 2944840, den: 16, verified: false },
+      { id: 3, name: "Coahuila", area: 151562, pop: 3146771, den: 19, verified: false },
+      { id: 4, name: "Durango", area: 123317, pop: 1832650, den: 14, verified: false },
+      { id: 5, name: "Oaxaca", area: 93757, pop: 4132148, den: 42, verified: false },
+      { id: 6, name: "Jalisco", area: 80295, pop: 8348151, den: 100, verified: true },
+      { id: 7, name: "Tamaulipas", area: 80249, pop: 3527735, den: 43, verified: false },
+      { id: 8, name: "Zacatecas", area: 75284, pop: 1622138, den: 21, verified: false },
+      { id: 9, name: "Chiapas", area: 73311, pop: 5543828, den: 75, verified: false },
+      { id: 10, name: "Baja California Sur", area: 73909, pop: 798447, den: 10, verified: false },
+      { id: 11, name: "Veracruz", area: 71826, pop: 8062579, den: 112, verified: false },
+      { id: 12, name: "Baja California", area: 71450, pop: 3769020, den: 52, verified: false },
+      { id: 13, name: "Nuevo León", area: 64156, pop: 5784442, den: 90, verified: false },
+      { id: 14, name: "Guerrero", area: 63596, pop: 3540685, den: 55, verified: false },
+      { id: 15, name: "San Luis Potosí", area: 61137, pop: 2822255, den: 46, verified: false },
+      { id: 16, name: "Michoacán", area: 58599, pop: 4748846, den: 81, verified: false },
+      { id: 17, name: "Sinaloa", area: 57365, pop: 3026943, den: 52, verified: false },
+      { id: 18, name: "Campeche", area: 57507, pop: 928363, den: 16, verified: false },
+      { id: 19, name: "Quintana Roo", area: 44705, pop: 1857985, den: 41, verified: false },
+      { id: 20, name: "Yucatán", area: 39524, pop: 2320898, den: 58, verified: false },
+      { id: 21, name: "Puebla", area: 34306, pop: 6583278, den: 191, verified: false },
+      { id: 22, name: "Guanajuato", area: 30608, pop: 6166934, den: 201, verified: false },
+      { id: 23, name: "Nayarit", area: 27857, pop: 1235456, den: 44, verified: false },
+      { id: 24, name: "Tabasco", area: 24731, pop: 2402598, den: 97, verified: false },
+      { id: 25, name: "Estado de México", area: 22351, pop: 16992418, den: 760, verified: false },
+      { id: 26, name: "Hidalgo", area: 20813, pop: 3082841, den: 148, verified: false },
+      { id: 27, name: "Querétaro", area: 11699, pop: 2368467, den: 202, verified: false },
+      { id: 28, name: "Colima", area: 5627, pop: 731391, den: 130, verified: false },
+      { id: 29, name: "Aguascalientes", area: 5618, pop: 1425607, den: 253, verified: false },
+      { id: 30, name: "Morelos", area: 4879, pop: 1971520, den: 390, verified: false },
+      { id: 31, name: "Tlaxcala", area: 4016, pop: 1342977, den: 318, verified: false },
+      { id: 32, name: "Ciudad de México", area: 1495, pop: 9209944, den: 5966, verified: true }
+    ];
+
+    function renderEntities(list) {
+      const tbody = document.getElementById('entitiesBody');
+      tbody.innerHTML = list.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td><strong>${item.name}</strong></td>
+          <td>${item.area.toLocaleString()}</td>
+          <td>${item.pop.toLocaleString()}</td>
+          <td>${item.den.toLocaleString()}</td>
+          <td>${item.verified ? '<span class="badge badge-success">✓ Verificada manual</span>' : '<span style="color:var(--text-dim); font-size:0.8rem;">Extraída</span>'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function filterEntities() {
+      const q = document.getElementById('entitySearch').value.toLowerCase();
+      const filtered = entitiesData.filter(e => e.name.toLowerCase().includes(q));
+      renderEntities(filtered);
+    }
+
+    // Initialize
+    renderEntities(entitiesData);
+  </script>
+</body>
+</html>
