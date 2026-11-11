@@ -1,0 +1,4 @@
+Usa las herramientas del servidor MCP sequential-thinking.
+1) Analiza de manera estructurada y secuencial una estrategia de optimización y caché para consultas recurrentes a una base de datos académica de calificaciones.
+2) Modela el problema dividiéndolo en pasos: planteamiento de requerimientos, análisis de alternativas arquitectónicas (Redis distribuido en memoria vs. LRU cache local en memoria de proceso), evaluación de trade-offs (consistencia, latencia, complejidad operativa y resiliencia), y conclusión recomendada.
+Responde con un resumen detallado del proceso de razonamiento paso a paso ejecutado con el servidor MCP.
